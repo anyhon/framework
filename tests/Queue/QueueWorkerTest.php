@@ -103,6 +103,8 @@ class QueueWorkerTest extends TestCase
             $this->exceptionHandler,
             function () {
                 return false;
+            },
+            function () {
             }
         );
 
@@ -316,14 +318,14 @@ class QueueWorkerTest extends TestCase
     /**
      * Helpers...
      */
-    private function getWorker($connectionName = 'default', $jobs = [], ?callable $isInMaintenanceMode = null)
+    private function getWorker($connectionName = 'default', $jobs = [], ?callable $isInMaintenanceMode = null, ?callable $setQueueDaemonFlag = null)
     {
         return new InsomniacWorker(
-            ...$this->workerDependencies($connectionName, $jobs, $isInMaintenanceMode)
+            ...$this->workerDependencies($connectionName, $jobs, $isInMaintenanceMode, $setQueueDaemonFlag)
         );
     }
 
-    private function workerDependencies($connectionName = 'default', $jobs = [], ?callable $isInMaintenanceMode = null)
+    private function workerDependencies($connectionName = 'default', $jobs = [], ?callable $isInMaintenanceMode = null, ?callable $setQueueDaemonFlag = null)
     {
         return [
             new WorkerFakeManager($connectionName, new WorkerFakeConnection($jobs)),
@@ -332,6 +334,7 @@ class QueueWorkerTest extends TestCase
             $isInMaintenanceMode ?? function () {
                 return false;
             },
+            $setQueueDaemonFlag ?? function () {},
         ];
     }
 

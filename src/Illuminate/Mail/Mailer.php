@@ -92,20 +92,27 @@ class Mailer implements MailerContract, MailQueueContract
     protected $failedRecipients = [];
 
     /**
+     * @var bool
+     */
+    protected $shouldForceReconnection;
+
+    /**
      * Create a new Mailer instance.
      *
      * @param  string  $name
      * @param  \Illuminate\Contracts\View\Factory  $views
      * @param  \Swift_Mailer  $swift
      * @param  \Illuminate\Contracts\Events\Dispatcher|null  $events
+     * @param  bool  $shouldForceReconnection
      * @return void
      */
-    public function __construct(string $name, Factory $views, Swift_Mailer $swift, Dispatcher $events = null)
+    public function __construct(string $name, Factory $views, Swift_Mailer $swift, Dispatcher $events = null, $shouldForceReconnection = false)
     {
         $this->name = $name;
         $this->views = $views;
         $this->swift = $swift;
         $this->events = $events;
+        $this->shouldForceReconnection = $shouldForceReconnection;
     }
 
     /**
@@ -511,6 +518,7 @@ class Mailer implements MailerContract, MailQueueContract
      * Send a Swift Message instance.
      *
      * @param  \Swift_Message  $message
+     * @param  bool  $forceReconnection
      * @return int|null
      */
     protected function sendSwiftMessage($message)
@@ -520,7 +528,9 @@ class Mailer implements MailerContract, MailQueueContract
         try {
             return $this->swift->send($message, $this->failedRecipients);
         } finally {
-            $this->forceReconnection();
+            if ($this->shouldForceReconnection) {
+                $this->forceReconnection();
+            }
         }
     }
 

@@ -55,6 +55,13 @@ class Worker
     protected $isDownForMaintenance;
 
     /**
+     * The callback used to set the flag for when the app is executed from a queue daemon
+     *
+     * @var callable
+     */
+    protected $setQueueDaemonFlag;
+
+    /**
      * Indicates if the worker should exit.
      *
      * @var bool
@@ -75,17 +82,20 @@ class Worker
      * @param  \Illuminate\Contracts\Events\Dispatcher  $events
      * @param  \Illuminate\Contracts\Debug\ExceptionHandler  $exceptions
      * @param  callable  $isDownForMaintenance
+     * @param  callable  $setQueueDaemonFlag
      * @return void
      */
     public function __construct(QueueManager $manager,
                                 Dispatcher $events,
                                 ExceptionHandler $exceptions,
-                                callable $isDownForMaintenance)
+                                callable $isDownForMaintenance,
+                                callable $setQueueDaemonFlag)
     {
         $this->events = $events;
         $this->manager = $manager;
         $this->exceptions = $exceptions;
         $this->isDownForMaintenance = $isDownForMaintenance;
+        $this->setQueueDaemonFlag = $setQueueDaemonFlag;
     }
 
     /**
@@ -98,6 +108,10 @@ class Worker
      */
     public function daemon($connectionName, $queue, WorkerOptions $options)
     {
+        if ($connectionName !== 'sync') {
+            ($this->setQueueDaemonFlag)(true);
+        }
+
         if ($this->supportsAsyncSignals()) {
             $this->listenForSignals();
         }
